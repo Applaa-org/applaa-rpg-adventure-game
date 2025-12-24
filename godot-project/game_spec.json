@@ -1,0 +1,160 @@
+{
+  "game": {
+    "name": "RPG Adventure Game",
+    "type": "2D",
+    "genre": "rpg",
+    "description": "A classic RPG adventure with turn-based combat, character progression, quests, and persistent database storage"
+  },
+  "settings": {
+    "window": {
+      "width": 1024,
+      "height": 768
+    },
+    "physics": {
+      "gravity": 0
+    }
+  },
+  "database": {
+    "enabled": true,
+    "api_url": "https://haix.ai/api",
+    "endpoints": {
+      "characters": "/characters",
+      "inventory": "/character_inventory",
+      "skills": "/character_skills",
+      "quests": "/character_quests",
+      "achievements": "/character_achievements",
+      "battle_logs": "/battle_logs"
+    }
+  },
+  "player": {
+    "classes": [
+      {
+        "name": "Warrior",
+        "base_health": 120,
+        "base_mana": 30,
+        "base_strength": 15,
+        "base_intelligence": 5,
+        "base_agility": 8,
+        "starting_skill": "Power Strike"
+      },
+      {
+        "name": "Mage",
+        "base_health": 80,
+        "base_mana": 100,
+        "base_strength": 5,
+        "base_intelligence": 15,
+        "base_agility": 8,
+        "starting_skill": "Fireball"
+      },
+      {
+        "name": "Rogue",
+        "base_health": 90,
+        "base_mana": 50,
+        "base_strength": 10,
+        "base_intelligence": 8,
+        "base_agility": 15,
+        "starting_skill": "Backstab"
+      }
+    ]
+  },
+  "enemies": [
+    {
+      "name": "Goblin",
+      "health": 40,
+      "damage": 8,
+      "experience": 25,
+      "gold": 10,
+      "loot": ["Health Potion", "Goblin Dagger"]
+    },
+    {
+      "name": "Orc Warrior",
+      "health": 80,
+      "damage": 15,
+      "experience": 50,
+      "gold": 25,
+      "loot": ["Orcish Axe", "Iron Armor"]
+    },
+    {
+      "name": "Dark Mage",
+      "health": 60,
+      "damage": 20,
+      "experience": 75,
+      "gold": 40,
+      "loot": ["Mana Potion", "Staff of Shadows"]
+    },
+    {
+      "name": "Dragon",
+      "health": 200,
+      "damage": 35,
+      "experience": 500,
+      "gold": 200,
+      "loot": ["Dragon Scale", "Legendary Sword"]
+    }
+  ],
+  "items": {
+    "weapons": [
+      {"name": "Rusty Sword", "damage": 5, "value": 10},
+      {"name": "Iron Sword", "damage": 12, "value": 50},
+      {"name": "Steel Sword", "damage": 20, "value": 150},
+      {"name": "Legendary Sword", "damage": 40, "value": 1000}
+    ],
+    "armor": [
+      {"name": "Cloth Armor", "defense": 3, "value": 15},
+      {"name": "Leather Armor", "defense": 8, "value": 60},
+      {"name": "Iron Armor", "defense": 15, "value": 200},
+      {"name": "Dragon Scale Armor", "defense": 30, "value": 1500}
+    ],
+    "potions": [
+      {"name": "Health Potion", "heal": 30, "value": 20},
+      {"name": "Mana Potion", "mana": 30, "value": 20},
+      {"name": "Super Health Potion", "heal": 80, "value": 60}
+    ]
+  },
+  "quests": [
+    {
+      "name": "Goblin Hunt",
+      "description": "Defeat 5 goblins terrorizing the village",
+      "type": "main",
+      "objective": "defeat_goblins",
+      "progress_required": 5,
+      "rewards": {
+        "experience": 100,
+        "gold": 50,
+        "item": "Steel Sword"
+      }
+    },
+    {
+      "name": "Dragon Slayer",
+      "description": "Defeat the legendary dragon",
+      "type": "main",
+      "objective": "defeat_dragon",
+      "progress_required": 1,
+      "rewards": {
+        "experience": 1000,
+        "gold": 500,
+        "achievement": "Dragon Slayer"
+      }
+    }
+  ],
+  "achievements": [
+    {"name": "First Blood", "description": "Win your first battle"},
+    {"name": "Level 10", "description": "Reach level 10"},
+    {"name": "Dragon Slayer", "description": "Defeat the legendary dragon"},
+    {"name": "Rich Adventurer", "description": "Accumulate 1000 gold"},
+    {"name": "Master Collector", "description": "Own 50 items"}
+  ],
+  "logic": {
+    "winCondition": "complete_all_main_quests",
+    "loseCondition": "health_zero",
+    "levelup": {
+      "experience_formula": "100 * level * level",
+      "stat_increases": {
+        "health": 10,
+        "mana": 5,
+        "strength": 2,
+        "intelligence": 2,
+        "agility": 2
+      }
+    }
+  }
+}

@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Adventure Game - Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+        #gameContainer {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            max-width: 900px;
+            width: 100%;
+        }
+        canvas {
+            display: block;
+            border: 3px solid #fff;
+            border-radius: 5px;
+            background: #2a2a3e;
+        }
+        .ui-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .stat {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .stat strong {
+            color: #ffd700;
+        }
+        .controls {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            text-align: center;
+        }
+        .controls h3 {
+            margin-bottom: 10px;
+            color: #ffd700;
+        }
+        .controls p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .battle-log {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px;
+        }
+        .log-victory {
+            color: #90EE90;
+        }
+        .log-defeat {
+            color: #FF6B6B;
+        }
+        .log-info {
+            color: #87CEEB;
+        }
+        .screen {
+            display: none;
+            text-align: center;
+        }
+        .screen.active {
+            display: block;
+        }
+        .screen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .screen h2 {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            margin: 10px;
+            width: 300px;
+        }
+        .character-select {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .character-card {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .character-card:hover {
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        .character-card.selected {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+        .character-card h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        .progress-bar {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 20px;
+            margin: 5px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.3s;
+        }
+        .progress-fill.health {
+            background: linear-gradient(90deg, #FF6B6B, #FF8E53);
+        }
+        .progress-fill.mana {
+            background: linear-gradient(90deg, #4A90E2, #7B68EE);
+        }
+        #previewNote {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 165, 0, 0.2);
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255, 165, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="previewNote">
+            <strong>🎮 Simplified Preview</strong><br>
+            Full RPG with database integration available in Godot export!<br>
+            This preview demonstrates core mechanics only.
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="screen active">
+            <h1>🗡️ RPG Adventure Game</h1>
+            <h2>Create Your Hero</h2>
+            <input type="text" id="characterName" placeholder="Enter character name..." maxlength="20">
+            <div class="character-select" id="characterSelect">
+                <div class="character-card" data-class="warrior">
+                    <h3>⚔️ Warrior</h3>
+                    <p>HP: 120 | MP: 30</p>
+                    <p>Strength: 15</p>
+                    <p>High HP, Strong attacks</p>
+                </div>
+                <div class="character-card" data-class="mage">
+                    <h3>🔮 Mage</h3>
+                    <p>HP: 80 | MP: 100</p>
+                    <p>Intelligence: 15</p>
+                    <p>Powerful spells</p>
+                </div>
+                <div class="character-card" data-class="rogue">
+                    <h3>🗡️ Rogue</h3>
+                    <p>HP: 90 | MP: 50</p>
+                    <p>Agility: 15</p>
+                    <p>Fast, balanced</p>
+                </div>
+            </div>
+            <button id="startButton">Start Adventure</button>
+            <button id="closeButton">Exit Game</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <div class="ui-panel">
+                <div class="stat">
+                    <strong>Character:</strong> <span id="charName">Hero</span> (<span id="charClass">Warrior</span>)
+                </div>
+                <div class="stat">
+                    <strong>Level:</strong> <span id="level">1</span> | <strong>Gold:</strong> <span id="gold">0</span>
+                </div>
+                <div class="stat">
+                    <div><strong>Health:</strong></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill health" id="healthBar"></div>
+                    </div>
+                    <span id="health">100/100</span>
+                </div>
+                <div class="stat">
+                    <div><strong>Mana:</strong></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill mana" id="manaBar"></div>
+                    </div>
+                    <span id="mana">50/50</span>
+                </div>
+                <div class="stat">
+                    <strong>Experience:</strong> <span id="exp">0/100</span>
+                </div>
+                <div class="stat">
+                    <strong>Battles Won:</strong> <span id="battlesWon">0</span>
+                </div>
+            </div>
+
+            <div class="battle-log" id="battleLog"></div>
+
+            <div class="controls">
+                <h3>Controls</h3>
+                <p><strong>WASD</strong> - Move | <strong>Click Enemy</strong> - Battle | <strong>ESC</strong> - Pause</p>
+                <button id="saveButton">💾 Save Progress</button>
+                <button id="menuButton">📋 Main Menu</button>
+            </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div id="battleScreen" class="screen">
+            <h2>⚔️ Battle!</h2>
+            <canvas id="battleCanvas" width="800"```html
+ height="400"></canvas>
+            
+            <div class="ui-panel">
+                <div class="stat">
+                    <strong>Enemy:</strong> <span id="enemyName">Goblin</span>
+                </div>
+                <div class="stat">
+                    <strong>Enemy HP:</strong> <span id="enemyHealth">40/40</span>
+                </div>
+            </div>
+
+            <div class="battle-log" id="battleLogBattle"></div>
+
+            <div class="controls">
+                <button id="attackButton">⚔️ Attack</button>
+                <button id="skillButton">✨ Use Skill (10 MP)</button>
+                <button id="potionButton">🧪 Health Potion</button>
+                <button id="fleeButton">🏃 Flee</button>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victoryScreen" class="screen">
+            <h1 style="color: #90EE90;">🏆 VICTORY!</h1>
+            <h2>Quest Completed!</h2>
+            <div class="ui-panel">
+                <div class="stat"><strong>Character:</strong> <span id="victoryChar"></span></div>
+                <div class="stat"><strong>Final Level:</strong> <span id="victoryLevel"></span></div>
+                <div class="stat"><strong>Total Gold:</strong> <span id="victoryGold"></span></div>
+                <div class="stat"><strong>Battles Won:</strong> <span id="victoryBattles"></span></div>
+            </div>
+            <button id="continueButton">Continue Adventure</button>
+            <button id="victoryMenuButton">Main Menu</button>
+            <button id="victoryCloseButton">Exit Game</button>
+        </div>
+
+        <!-- Defeat Screen -->
+        <div id="defeatScreen" class="screen">
+            <h1 style="color: #FF6B6B;">💀 DEFEATED</h1>
+            <h2>You were defeated in battle!</h2>
+            <p style="margin: 20px 0;">Don't give up, hero! Try again!</p>
+            <div class="ui-panel">
+                <div class="stat"><strong>Character:</strong> <span id="defeatChar"></span></div>
+                <div class="stat"><strong>Level:</strong> <span id="defeatLevel"></span></div>
+                <div class="stat"><strong>Gold:</strong> <span id="defeatGold"></span></div>
+                <div class="stat"><strong>Experience:</strong> <span id="defeatExp"></span></div>
+            </div>
+            <button id="retryButton">⚔️ Retry</button>
+            <button id="defeatMenuButton">Main Menu</button>
+            <button id="defeatCloseButton">Exit Game</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const gameState = {
+            screen: 'start',
+            character: {
+                name: '',
+                class: 'warrior',
+                level: 1,
+                exp: 0,
+                health: 100,
+                maxHealth: 100,
+                mana: 50,
+                maxMana: 50,
+                strength: 10,
+                intelligence: 10,
+                agility: 10,
+                gold: 0
+            },
+            battle: {
+                enemy: null,
+                playerTurn: true,
+                log: []
+            },
+            progress: {
+                battlesWon: 0,
+                enemiesDefeated: 0,
+                questsCompleted: 0
+            },
+            enemies: [
+                { name: 'Goblin', health: 40, damage: 8, exp: 25, gold: 10, x: 200, y: 400 },
+                { name: 'Orc Warrior', health: 80, damage: 15, exp: 50, gold: 25, x: 400, y: 350 },
+                { name: 'Dark Mage', health: 60, damage: 20, exp: 75, gold: 40, x: 600, y: 380 }
+            ],
+            player: { x: 100, y: 450, width: 30, height: 30, speed: 3 },
+            keys: {},
+            potions: 3
+        };
+
+        // Canvas Setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const battleCanvas = document.getElementById('battleCanvas');
+        const battleCtx = battleCanvas.getContext('2d');
+
+        // Character Selection
+        document.querySelectorAll('.character-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                gameState.character.class = card.dataset.class;
+                
+                // Set stats based on class
+                switch(gameState.character.class) {
+                    case 'warrior':
+                        gameState.character.maxHealth = 120;
+                        gameState.character.health = 120;
+                        gameState.character.maxMana = 30;
+                        gameState.character.mana = 30;
+                        gameState.character.strength = 15;
+                        gameState.character.intelligence = 5;
+                        gameState.character.agility = 8;
+                        break;
+                    case 'mage':
+                        gameState.character.maxHealth = 80;
+                        gameState.character.health = 80;
+                        gameState.character.maxMana = 100;
+                        gameState.character.mana = 100;
+                        gameState.character.strength = 5;
+                        gameState.character.intelligence = 15;
+                        gameState.character.agility = 8;
+                        break;
+                    case 'rogue':
+                        gameState.character.maxHealth = 90;
+                        gameState.character.health = 90;
+                        gameState.character.maxMana = 50;
+                        gameState.character.mana = 50;
+                        gameState.character.strength = 10;
+                        gameState.character.intelligence = 8;
+                        gameState.character.agility = 15;
+                        break;
+                }
+            });
+        });
+
+        // Start Game
+        document.getElementById('startButton').addEventListener('click', () => {
+            const name = document.getElementById('characterName').value.trim();
+            if (!name) {
+                alert('Please enter a character name!');
+                return;
+            }
+            gameState.character.name = name;
+            showScreen('game');
+            updateUI();
+            gameLoop();
+        });
+
+        // Close Game
+        document.getElementById('closeButton').addEventListener('click', () => {
+            if (confirm('Are you sure you want to exit?')) {
+                window.close();
+            }
+        });
+
+        // Button Handlers
+        document.getElementById('saveButton').addEventListener('click', () => {
+            addLog('Game progress saved! (simulated)', 'log-info');
+            alert('Progress saved!');
+        });
+
+        document.getElementById('menuButton').addEventListener('click', () => {
+            if (confirm('Return to main menu? (Progress will be saved)')) {
+                showScreen('start');
+                resetGame();
+            }
+        });
+
+        // Battle Buttons
+        document.getElementById('attackButton').addEventListener('click', () => playerAttack());
+        document.getElementById('skillButton').addEventListener('click', () => playerSkill());
+        document.getElementById('potionButton').addEventListener('click', () => usePotion());
+        document.getElementById('fleeButton').addEventListener('click', () => flee());
+
+        // Victory/Defeat Buttons
+        document.getElementById('continueButton').addEventListener('click', () => {
+            showScreen('game');
+            gameState.player.x = 100;
+            gameState.player.y = 450;
+        });
+
+        document.getElementById('retryButton').addEventListener('click', () => {
+            gameState.character.health = Math.floor(gameState.character.maxHealth * 0.5);
+            gameState.character.mana = Math.floor(gameState.character.maxMana * 0.5);
+            showScreen('game');
+        });
+
+        ['victoryMenuButton', 'defeatMenuButton'].forEach(id => {
+            document.getElementById(id).addEventListener('click', () => {
+                showScreen('start');
+                resetGame();
+            });
+        });
+
+        ['victoryCloseButton', 'defeatCloseButton'].forEach(id => {
+            document.getElementById(id).addEventListener('click', () => {
+                if (confirm('Exit game?')) window.close();
+            });
+        });
+
+        // Screen Management
+        function showScreen(screen) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screen + 'Screen').classList.add('active');
+            gameState.screen = screen;
+        }
+
+        // Update UI
+        function updateUI() {
+            const char = gameState.character;
+            document.getElementById('charName').textContent = char.name;
+            document.getElementById('charClass').textContent = char.class.charAt(0).toUpperCase() + char.class.slice(1);
+            document.getElementById('level').textContent = char.level;
+            document.getElementById('gold').textContent = char.gold;
+            document.getElementById('health').textContent = `${char.health}/${char.maxHealth}`;
+            document.getElementById('mana').textContent = `${char.mana}/${char.maxMana}`;
+            document.getElementById('exp').textContent = `${char.exp}/${100 * char.level * char.level}`;
+            document.getElementById('battlesWon').textContent = gameState.progress.battlesWon;
+            
+            // Update progress bars
+            const healthPercent = (char.health / char.maxHealth) * 100;
+            const manaPercent = (char.mana / char.maxMana) * 100;
+            document.getElementById('healthBar').style.width = healthPercent + '%';
+            document.getElementById('manaBar').style.width = manaPercent + '%';
+        }
+
+        // Game Loop
+        function gameLoop() {
+            if (gameState.screen !== 'game') return;
+            
+            // Clear canvas
+            ctx.fillStyle = '#4a6fa5';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw ground
+            ctx.fillStyle = '#4a7c59';
+            ctx.fillRect(0, 500, canvas.width, 100);
+            
+            // Update player position
+            if (gameState.keys['KeyW'] || gameState.keys['ArrowUp']) gameState.player.y -= gameState.player.speed;
+            if (gameState.keys['KeyS'] || gameState.keys['ArrowDown']) gameState.player.y += gameState.player.speed;
+            if (gameState.keys['KeyA'] || gameState.keys['ArrowLeft']) gameState.player.x -= gameState.player.speed;
+            if (gameState.keys['KeyD'] || gameState.keys['ArrowRight']) gameState.player.x += gameState.player.speed;
+            
+            // Bounds checking
+            gameState.player.x = Math.max(0, Math.min(canvas.width - gameState.player.width, gameState.player.x));
+            gameState.player.y = Math.max(0, Math.min(canvas.height - gameState.player.height, gameState.player.y));
+            
+            // Draw player
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(gameState.player.x, gameState.player.y, gameState.player.width, gameState.player.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.fillText(gameState.character.name, gameState.player.x - 10, gameState.player.y - 10);
+            
+            // Draw enemies
+            gameState.enemies.forEach(enemy => {
+                if (enemy.health > 0) {
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.fillRect(enemy.x - 20, enemy.y - 20, 40, 40);
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(enemy.name, enemy.x - 25, enemy.y - 25);
+                    ctx.font = '10px Arial';
+                    ctx.fillText(`HP: ${enemy.health}`, enemy.x - 15, enemy.y + 35);
+                    ctx.font = '12px Arial';
+                    
+                    // Check collision
+                    const dist = Math.hypot(gameState.player.x - enemy.x, gameState.player.y - enemy.y);
+                    if (dist < 50) {
+                        startBattle(enemy);
+                    }
+                }
+            });
+            
+            // Draw goal
+            if (gameState.progress.enemiesDefeated >= 2) {
+                ctx.fillStyle = '#f39c12';
+                ctx.fillRect(750, 450, 40, 60);
+                ctx.fillStyle = 'white';
+                ctx.fillText('QUEST', 745, 440);
+                
+                // Check goal collision
+                const distGoal = Math.hypot(gameState.player.x - 770, gameState.player.y - 480);
+                if (distGoal < 50) {
+                    victory();
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Battle System
+        function startBattle(enemy) {
+            gameState.battle.enemy = {...enemy};
+            gameState.battle.playerTurn = true;
+            gameState.battle.log = [];
+            
+            showScreen('battle');
+            addLogBattle(`Battle started against ${enemy.name}!`, 'log-info');
+            updateBattleUI();
+            drawBattle();
+        }
+
+        function updateBattleUI() {
+            const enemy = gameState.battle.enemy;
+            document.getElementById('enemyName').textContent = enemy.name;
+            document.getElementById('enemyHealth').textContent = `${enemy.health}/${gameState.enemies.find(e => e.name === enemy.name).health}`;
+            updateUI();
+        }
+
+        function drawBattle() {
+            if (gameState.screen !== 'battle') return;
+            
+            battleCtx.fillStyle = '#2c3e50';
+            battleCtx.fillRect(0, 0, battleCanvas.width, battleCanvas.height);
+            
+            // Draw enemy
+            battleCtx.fillStyle = '#e74c3c';
+            battleCtx.fillRect(600, 150, 80, 80);
+            battleCtx.fillStyle = 'white';
+            battleCtx.font = '16px Arial';
+            battleCtx.fillText(gameState.battle.enemy.name, 590, 140);
+            
+            // Draw player
+            battleCtx.fillStyle = '#3498db';
+            battleCtx.fillRect(120, 250, 60, 60);
+            battleCtx.fillStyle = 'white';
+            battleCtx.fillText(gameState.character.name, 110, 240);
+            
+            requestAnimationFrame(drawBattle);
+        }
+
+        function playerAttack() {
+            if (!gameState.battle.playerTurn) return;
+            
+            gameState.battle.playerTurn = false;
+            disableBattleButtons();
+            
+            const damage = gameState.character.strength + Math.floor(Math.random() * 10) + 5;
+            gameState.battle.enemy.health -= damage;
+            addLogBattle(`You deal ${damage} damage!`, 'log-info');
+            
+            setTimeout(() => {
+                if (gameState.battle.enemy.health <= 0) {
+                    winBattle();
+                } else {
+                    enemyTurn();
+                }
+            }, 500);
+        }
+
+        function playerSkill() {
+            if (!gameState.battle.playerTurn) return;
+            
+            const manaCost = 10;
+            if (gameState.character.mana < manaCost) {
+                addLogBattle('Not enough mana!', 'log-defeat');
+                return;
+            }
+            
+            gameState.battle.playerTurn = false;
+            disableBattleButtons();
+            
+            gameState.character.mana -= manaCost;
+            const damage = gameState.character.intelligence * 2 + Math.floor(Math.random() * 15) + 10;
+            gameState.battle.enemy.health -= damage;
+            addLogBattle(`You use your skill for ${damage} damage!`, 'log-victory');
+            
+            setTimeout(() => {
+                if (gameState.battle.enemy.health <= 0) {
+                    winBattle();
+                } else {
+                    enemyTurn();
+                }
+            }, 500);
+        }
+
+        function usePotion() {
+            if (!gameState.battle.playerTurn || gameState.potions <= 0) {
+                addLogBattle('No potions available!', 'log-defeat');
+                return;
+            }
+            
+            gameState.battle.playerTurn = false;
+            disableBattleButtons();
+            
+            gameState.potions--;
+            const heal = 30;
+            gameState.character.health = Math.min(gameState.character.maxHealth, gameState.character.health + heal);
+            addLogBattle(`You used a Health Potion! Restored ${heal} HP!`, 'log-victory');
+            
+            setTimeout(() => enemyTurn(), 500);
+        }
+
+        function flee() {
+            if (!gameState.battle.playerTurn) return;
+            
+            const fleeChance = Math.random();
+            if (fleeChance > 0.5) {
+                addLogBattle('You successfully fled!', 'log-info');
+                setTimeout(() => {
+                    showScreen('game');
+                    gameState.player.x = 100;
+                    gameState.player.y = 450;
+                }, 1000);
+            } else {
+                addLogBattle('Failed to flee!', 'log-defeat');
+                gameState.battle.playerTurn = false;
+                disableBattleButtons();
+                setTimeout(() => enemyTurn(), 500);
+            }
+        }
+
+        function enemyTurn() {
+            const damage = gameState.battle.enemy.damage + Math.floor(Math.random() * 5);
+            gameState.character.health -= damage;
+            addLogBattle(`${gameState.battle.enemy.name} deals ${damage} damage!`, 'log-defeat');
+            updateBattleUI();
+            
+            setTimeout(() => {
+                if (gameState.character.health <= 0) {
+                    loseBattle();
+                } else {
+                    gameState.battle.playerTurn = true;
+                    enableBattleButtons();
+                }
+            }, 1000);
+        }
+
+        function winBattle() {
+            const enemy = gameState.battle.enemy;
+            const originalEnemy = gameState.enemies.find(e => e.name === enemy.name);
+            
+            addLogBattle(`Victory! You defeated ${enemy.name}!`, 'log-victory');
+            addLogBattle(`Gained ${enemy.exp} EXP and ${enemy.gold} gold!`, 'log-victory');
+            
+            gameState.character.exp += enemy.exp;
+            gameState.character.gold += enemy.gold;
+            gameState.progress.battlesWon++;
+            gameState.progress.enemiesDefeated++;
+            
+            // Mark enemy as defeated
+            originalEnemy.health = 0;
+            
+            // Check level up
+            while (gameState.character.exp >= 100 * gameState.character.level * gameState.character.level) {
+                levelUp();
+            }
+            
+            updateUI();
+            
+            setTimeout(() => {
+                showScreen('game');
+            }, 2000);
+        }
+
+        function loseBattle() {
+            addLogBattle('You have been defeated!', 'log-defeat');
+            
+            setTimeout(() => {
+                document.getElementById('defeatChar').textContent = `${gameState.character.name} (${gameState.character.class})`;
+                document.getElementById('defeatLevel').textContent = gameState.character.level;
+                document.getElementById('defeatGold').textContent = gameState.character.gold;
+                document.getElementById('defeatExp').textContent = gameState.character.exp;
+                showScreen('defeat');
+            }, 2000);
+        }
+
+        function levelUp() {
+            gameState.character.level++;
+            gameState.character.maxHealth += 10;
+            gameState.character.maxMana += 5;
+            gameState.character.strength += 2;
+            gameState.character.intelligence += 2;
+            gameState.character.agility += 2;
+            gameState.character.health = gameState.character.maxHealth;
+            gameState.character.mana = gameState.character.maxMana;
+            
+            addLog(`Level Up! Now level ${gameState.character.level}!`, 'log-victory');
+        }
+
+        function victory() {
+            document.getElementById('victoryChar').textContent = `${gameState.character.name} (${gameState.character.class})`;
+            document.getElementById('victoryLevel').textContent = gameState.character.level;
+            document.getElementById('victoryGold').textContent = gameState.character.gold;
+            document.getElementById('victoryBattles').textContent = gameState.progress.battlesWon;
+            showScreen('victory');
+        }
+
+        function disableBattleButtons() {
+            document.getElementById('attackButton').disabled = true;
+            document.getElementById('skillButton').disabled = true;
+            document.getElementById('potionButton').disabled = true;
+            document.getElementById('fleeButton').disabled = true;
+        }
+
+        function enableBattleButtons() {
+            document.getElementById('attackButton').disabled = false;
+            document.getElementById('skillButton').disabled = false;
+            document.getElementById('potionButton').disabled = false;
+            document.getElementById('fleeButton').disabled = false;
+        }
+
+        function addLog(text, cssClass = '') {
+            const log = document.getElementById('battleLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + cssClass;
+            entry.textContent = text;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function addLogBattle(text, cssClass = '') {
+            const log = document.getElementById('battleLogBattle');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + cssClass;
+            entry.textContent = text;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function resetGame() {
+            gameState.character = {
+                name: '',
+                class: 'warrior',
+                level: 1,
+                exp: 0,
+                health: 100,
+                maxHealth: 100,
+                mana: 50,
+                maxMana: 50,
+                strength: 10,
+                intelligence: 10,
+                agility: 10,
+                gold: 0
+            };
+            gameState.progress = {
+                battlesWon: 0,
+                enemiesDefeated: 0,
+                questsCompleted: 0
+            };
+            gameState.enemies = [
+                { name: 'Goblin', health: 40, damage: 8, exp: 25, gold: 10, x: 200, y: 400 },
+                { name: 'Orc Warrior', health: 80, damage: 15, exp: 50, gold: 25, x: 400, y: 350 },
+                { name: 'Dark Mage', health: 60, damage: 20, exp: 75, gold: 40, x: 600, y: 380 }
+            ];
+            gameState.player = { x: 100, y: 450, width: 30, height: 30, speed: 3 };
+            gameState.potions = 3;
+            
+            document.getElementById('characterName').value = '';
+            document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector('[data-class="warrior"]').classList.add('selected');
+        }
+
+        // Keyboard Input
+        window.addEventListener('keydown', (e) => {
+            gameState.keys[e.code] = true;
+            if (e.code === 'Escape' && gameState.screen === 'game') {
+                document.getElementById('menuButton').click();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            gameState.keys[e.code] = false;
+        });
+
+        // Initialize - select warrior by default
+        document.querySelector('[data-class="warrior"]').classList.add('selected');
+    </script>
+</body>
+</html>
